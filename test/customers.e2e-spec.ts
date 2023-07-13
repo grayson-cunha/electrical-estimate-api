@@ -12,7 +12,7 @@ import {
   CustomerDocument,
 } from '../src/modules/customers/customers.model';
 
-describe('AppController (e2e)', () => {
+describe('CustomersController (e2e)', () => {
   let app: INestApplication;
   let customerModel: Model<Customer>;
   let customerMock;
