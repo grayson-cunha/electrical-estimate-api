@@ -1,14 +1,11 @@
 import { Module } from '@nestjs/common';
+import { SequelizeModule } from '@nestjs/sequelize';
+
 import { CustomersController } from './customers.controller';
-import { Customer, CustomerSchema } from './customers.model';
-import { MongooseModule } from '@nestjs/mongoose';
+import { Customer } from './customers.model';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: Customer.name, schema: CustomerSchema },
-    ]),
-  ],
+  imports: [SequelizeModule.forFeature([Customer])],
   controllers: [CustomersController],
   providers: [],
 })

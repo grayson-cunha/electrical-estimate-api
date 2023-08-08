@@ -1,18 +1,13 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { Column, Model, Table } from 'sequelize-typescript';
 
-export type CustomerDocument = HydratedDocument<Customer>;
-
-@Schema({ versionKey: false, timestamps: { updatedAt: false } })
-export class Customer {
-  @Prop()
+@Table
+export class Customer extends Model {
+  @Column
   name: string;
 
-  @Prop()
+  @Column
   phoneNumber: string;
 
-  @Prop()
+  @Column
   email: string;
 }
-
-export const CustomerSchema = SchemaFactory.createForClass(Customer);

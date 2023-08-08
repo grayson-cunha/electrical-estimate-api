@@ -1,20 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { getModelToken } from '@nestjs/mongoose';
+import { getModelToken } from '@nestjs/sequelize';
 
 import * as request from 'supertest';
-import { Model } from 'mongoose';
+import { Model } from 'sequelize-typescript';
 
 import { CustomersModule } from '../src/modules/customers/customers.module';
 import { ConfigurationModule } from '../src/modules/configuration/configuration.module';
-import {
-  Customer,
-  CustomerDocument,
-} from '../src/modules/customers/customers.model';
+import { Customer } from '../src/modules/customers/customers.model';
 
 describe('CustomersController (e2e)', () => {
   let app: INestApplication;
-  let customerModel: Model<Customer>;
+  let customerModel;
   let customerMock;
 
   beforeAll(async () => {
@@ -31,11 +28,9 @@ describe('CustomersController (e2e)', () => {
       phoneNumber: '31999999999',
     };
 
-    customerModel = moduleFixture.get<Model<CustomerDocument>>(
-      getModelToken(Customer.name),
-    );
+    customerModel = moduleFixture.get<Model<Customer>>(getModelToken(Customer));
 
-    await customerModel.deleteMany({});
+    await customerModel.destroy({ where: {}, truncate: true });
   });
 
   it('should get an empty customer array', () => {
@@ -55,9 +50,9 @@ describe('CustomersController (e2e)', () => {
       .send(customerMock)
       .expect(HttpStatus.CREATED)
       .then((res) => {
-        const { _id, name, email, phoneNumber, createdAt } = res.body;
+        const { id, name, email, phoneNumber, createdAt } = res.body;
 
-        expect(_id).toBeDefined();
+        expect(id).toBeDefined();
         expect(createdAt).toBeDefined();
         expect(name).toBe('Uzumaki Naruto');
         expect(email).toBe('naruto@uzumaki.com.br');
@@ -71,7 +66,7 @@ describe('CustomersController (e2e)', () => {
     const newCustomer = await CustomerModel.save();
 
     return request(app.getHttpServer())
-      .put(`/customers/${newCustomer._id}`)
+      .put(`/customers/${newCustomer.id}`)
       .send({
         phoneNumber: '31888888888',
       })

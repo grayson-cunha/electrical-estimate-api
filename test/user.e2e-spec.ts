@@ -1,22 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { getModelToken } from '@nestjs/mongoose';
 
 import * as request from 'supertest';
-import { Model, Types } from 'mongoose';
 
 import { ConfigurationModule } from '../src/modules/configuration/configuration.module';
-import { User, UserDocument } from '../src/modules/users/user.model';
+import { User } from '../src/modules/users/user.model';
 import { UsersModule } from '../src/modules/users/users.module';
 import { UserService } from '../src/modules/users/user.service';
+import { Model } from 'sequelize-typescript';
+import { getModelToken } from '@nestjs/sequelize';
 
 describe('UsersController (e2e)', () => {
   let app: INestApplication;
-  let userModel: Model<User>;
+  let userModel;
   let userMock: any;
   let userService: UserService;
 
-  const INVALID_ID = new Types.ObjectId();
+  const INVALID_ID = 1000;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -34,13 +34,11 @@ describe('UsersController (e2e)', () => {
 
     userService = moduleFixture.get<UserService>(UserService);
 
-    userModel = moduleFixture.get<Model<UserDocument>>(
-      getModelToken(User.name),
-    );
+    userModel = moduleFixture.get<Model<User>>(getModelToken(User));
   });
 
   beforeEach(async () => {
-    await userModel.deleteMany({});
+    await userModel.destroy({ where: {}, truncate: true });
   });
 
   it('should throw not found exception', () => {
@@ -53,12 +51,12 @@ describe('UsersController (e2e)', () => {
     const newUser = await userService.create(userMock);
 
     return request(app.getHttpServer())
-      .get(`/users/${newUser._id}`)
+      .get(`/users/${newUser.id}`)
       .expect(HttpStatus.OK)
       .then((res) => {
-        const { _id, name, email } = res.body;
+        const { id, name, email } = res.body;
 
-        expect(_id).toBe(newUser._id.toString());
+        expect(id).toBe(newUser.id);
         expect(name).toBe('Uzumaki Naruto');
         expect(email).toBe('naruto@uzumaki.com.br');
       });
@@ -70,9 +68,9 @@ describe('UsersController (e2e)', () => {
       .send(userMock)
       .expect(HttpStatus.CREATED)
       .then((res) => {
-        const { _id, name, email, hashPassword, createdAt } = res.body;
+        const { id, name, email, hashPassword, createdAt } = res.body;
 
-        expect(_id).toBeDefined();
+        expect(id).toBeDefined();
         expect(createdAt).toBeDefined();
         expect(hashPassword).toBeDefined();
         expect(name).toBe('Uzumaki Naruto');
@@ -100,7 +98,7 @@ describe('UsersController (e2e)', () => {
     const newUser = await userService.create(userMock);
 
     return request(app.getHttpServer())
-      .put(`/users/${newUser._id}`)
+      .put(`/users/${newUser.id}`)
       .send({ email: 'teste@teste.com.br', password: '54321' })
       .expect(HttpStatus.OK)
       .then((res) => {

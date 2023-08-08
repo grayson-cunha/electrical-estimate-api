@@ -3,9 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectModel } from '@nestjs/sequelize';
 
-import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 
 import { User } from './user.model';
@@ -14,10 +13,12 @@ import { UpdateUserDto } from './dtos/update-user-dto';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(@InjectModel(User) private userModel: typeof User) {}
 
   async create(newUser: CreateUserDto) {
-    const user = await this.userModel.findOne({ email: newUser.email });
+    const user = await this.userModel.findOne({
+      where: { email: newUser.email },
+    });
 
     if (user) {
       throw new BadRequestException(
@@ -35,7 +36,7 @@ export class UserService {
   }
 
   async findById(id: string) {
-    const user = await this.userModel.findById(id);
+    const user = await this.userModel.findByPk(id);
 
     if (!user) {
       throw new NotFoundException(`Usuário com o id ${id} não encontrado`);
@@ -46,24 +47,22 @@ export class UserService {
 
   async update(id: string, userData: UpdateUserDto) {
     let newHash: string;
-    let user: any;
+    const updateData: any = { ...userData };
 
     if (userData.password) {
       const salt = 8;
 
       newHash = await bcrypt.hash(userData.password, salt);
 
-      user = { ...userData, hashPassword: newHash };
+      updateData.hashPassword = newHash;
     }
 
-    const updatedUser = await this.userModel.findByIdAndUpdate(id, user, {
-      new: true,
-    });
+    const user = await this.userModel.findByPk(id);
 
-    if (!updatedUser) {
+    if (!user) {
       throw new NotFoundException(`Usuário com o id ${id} não encontrado`);
     }
 
-    return updatedUser;
+    return user.update(updateData);
   }
 }

@@ -7,26 +7,24 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+
 import { Customer } from './customers.model';
-import { Model } from 'mongoose';
-import { InjectModel } from '@nestjs/mongoose';
 import { CreateCustomerDto } from './dtos/create-customer.dto';
 import { UpdateCustomerDto } from './dtos/update-customer.dto';
 
 @Controller('customers')
 export class CustomersController {
-  constructor(
-    @InjectModel(Customer.name) private customerModel: Model<Customer>,
-  ) {}
+  constructor(@InjectModel(Customer) private customerModel: typeof Customer) {}
 
   @Get()
   getAll(): Promise<Customer[]> {
-    return this.customerModel.find();
+    return this.customerModel.findAll();
   }
 
   @Post()
-  createCustomer(@Body() createCustomerDto: CreateCustomerDto) {
-    const customerModel = new this.customerModel(createCustomerDto);
+  async createCustomer(@Body() createCustomerDto: CreateCustomerDto) {
+    const customerModel = new this.customerModel({ ...createCustomerDto });
     return customerModel.save();
   }
 
@@ -35,16 +33,12 @@ export class CustomersController {
     @Param('id') id: string,
     @Body() customerData: UpdateCustomerDto,
   ) {
-    const customer = await this.customerModel.findByIdAndUpdate(
-      id,
-      customerData,
-      { new: true },
-    );
+    const customer = await this.customerModel.findByPk(Number(id));
 
     if (!customer) {
       throw new NotFoundException('Cliente não encontrado');
     }
 
-    return customer;
+    return customer.update(customerData);
   }
 }
